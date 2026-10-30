@@ -1,0 +1,72 @@
+import requests
+import json
+from concurrent.futures import ThreadPoolExecutor    
+import threading
+from pyfiglet import figlet_format
+
+import time
+
+
+def animate_credit(stop_event):
+    colors = ["\033[91m", "\033[93m", "\033[92m", "\033[96m", "\033[95m"]
+    BOLD  = "\033[1m"
+    RESET = "\033[0m"
+    text  = "DEVELOPED BY ABDULRAHMAN ISMEAL"
+    i = 0
+    while not stop_event.is_set():
+        print("\r" + BOLD + colors[i % len(colors)] + text.center(58) + RESET, end="", flush=True)
+        i += 1
+        time.sleep(1)
+
+def banner():
+    CYAN   = "\033[96m"
+    YELLOW = "\033[93m"
+    BOLD   = "\033[1m"
+    RESET  = "\033[0m"
+    art = figlet_format("DS-FUCK", font="slant")
+    print(CYAN + "=" * 58 + RESET)
+    print(BOLD + CYAN + art + RESET)
+    print(YELLOW + ">> TOOL <<".center(58) + RESET)
+    print(CYAN + "=" * 58 + RESET)
+
+banner()
+print("\033[93m" + "(Click Enter To Start)".center(58) + "\033[0m")
+
+stop_event = threading.Event()
+t = threading.Thread(target=animate_credit, args=(stop_event,), daemon=True)
+t.start()
+
+input()
+stop_event.set()
+print()
+
+url = input("Enter Endpoint URL: ").strip()
+rps = int(input("Requests per second: "))
+total = int(input("Total requests: "))
+
+if not url.startswith(("http://", "https://")):
+    print("Invalid URL")
+    exit()
+
+body = input("JSON Body (optional): ").strip()
+
+try:
+    payload = json.loads(body) if body else None
+except json.JSONDecodeError:
+    print("Invalid JSON")
+    exit()
+
+print("\nStarting POST Requests...\n")
+
+def send_request(i):
+    try:
+        response = requests.post(url, json=payload, timeout=5)
+        print(f"[{i+1}] نجح ✅ | {response.status_code}")
+    except requests.exceptions.RequestException as e:
+        print(f"[{i+1}] السيرفر لا يرد:خلال خمس  ثواني ❌ | {e}")
+
+with ThreadPoolExecutor(max_workers=200) as executor:
+    executor.map(send_request, range(total))
+
+print("\nFinished!")
+
